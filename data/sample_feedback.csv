@@ -1,0 +1,60 @@
+text,source,customer_email
+"The new dashboard is fantastic — clean, fast, and easy to use. Our team adopted it within a day.",email,sarah@acme.io
+"Mobile app crashes every time I open the reports tab. Please fix this ASAP, it's blocking my work.",support,james@acme.io
+"Pricing is a bit high for small teams. Would love a startup tier around $19/mo.",email,founder@indie.dev
+"The onboarding is great but the documentation is missing webhook examples.",email,dev@startup.com
+"Honestly the best customer support I've ever had — response in 5 minutes, real solution, follow-up next day.",twitter,happy_user
+"Dark mode would be a nice addition. Otherwise the app is perfect.",email,designer@studio.co
+"Got a chargeback email even though my payment was processed correctly. This is concerning and looks like fraud.",support,angry@customer.com
+"Performance has improved a lot since the last release. Kudos to the engineering team.",email,cto@acme.io
+"Two-factor authentication reset is broken — I lost access to my account and had to contact support.",support,locked@user.io
+"Integration with Slack works flawlessly. Saves me an hour every week.",email,ops@team.com
+"Refund please — the subscription renewed automatically without warning. This is a bug.",support,refund@angry.io
+"The UI is intuitive and the design feels modern. I especially like the keyboard shortcuts.",email,designer@ux.co
+"Outage last night took down our production environment for 2 hours. Need a status page and better incident communication.",email,oncall@startup.io
+"The free trial was perfect to evaluate the product. Converted to paid without hesitation.",email,newcustomer@biz.com
+"Loading is slow when the dataset has more than 10k rows. Could you add pagination?",email,analyst@bigdata.io
+"Love the simplicity. No clutter, no upsells, just a tool that works.",email,minimalist@fan.io
+"The CSV export is missing the sentiment column. Please add it.",email,data@team.com
+"Spam — buy crypto now huge returns guaranteed",twitter,spam_bot
+"Webhook stopped firing after the 1.4 release. Our integration has been silent for two days.",email,webhook@partner.io
+"Would be great to have a public API. Right now everything goes through the dashboard.",email,api@dev.io
+"Premium support has been very responsive and saved our launch last week. Worth every dollar.",email,vip@customer.com
+"Confusing navigation — I had to click 5 times to find the settings page.",email,confused@user.com
+"Push notifications on iOS are great. The Android version is missing.",email,mobile@user.io
+"Updated my billing info and got an error 500. Had to retry 3 times.",support,billing@user.io
+"The mobile app is a delight. Five stars from me.",appstore,reviewer1
+"Constant bugs in the editor. Saving fails randomly, content gets duplicated, frustrating.",email,frustrated@writer.io
+"Great product overall, but the pricing for the enterprise tier is unclear and requires a sales call.",email,enterprise@biz.com
+"Auto-save is a lifesaver. Lost work used to be my #1 frustration.",email,writer@blogger.com
+"The new search is amazing. So much faster than before.",email,fan@acme.io
+"Login flow has a confusing 2FA step that asks for codes from two different apps.",support,confused2@user.io
+"Best tool of its kind that I've tried. Switching from a competitor was easy.",email,switcher@biz.com
+"Data loss yesterday — my project was empty when I logged in this morning. Need an urgent fix and explanation.",support,scared@user.io
+"The blog integration is broken — images don't upload reliably.",email,blogger@creator.io
+"Customer service chat was offline all weekend. Nobody answered my ticket until Monday.",support,ignored@user.io
+"Beautiful UI and thoughtful details. The empty states are especially nice.",email,designer2@studio.co
+"Email notifications are too frequent. Let me choose what I want to hear about.",email,overwhelmed@user.io
+"API documentation is top-notch. The examples are real and copy-pasteable.",email,dev@partner.io
+"Need a way to export to PDF with custom branding for client reports.",email,consultant@firm.com
+"App froze three times today on my iPhone 15. Please fix the stability.",appstore,reviewer2
+"Setup took me 5 minutes. Amazing.",email,newbie@user.io
+"The price increase is unfortunate. We were just getting started.",email,budget@startup.io
+"Security features are solid — SSO, audit logs, granular permissions. Exactly what we needed.",email,ciso@enterprise.com
+"Hate the new sidebar layout. The previous version was better.",email,nostalgic@user.io
+"Live chat widget is a game changer for our support team. Saves us 10+ hours a week.",email,support@acme.io
+"Three days of downtime this month is unacceptable for a paid product. Considering a refund.",email,furious@user.io
+"QuickBooks integration is exactly what I needed for my bookkeeping. Thank you!",email,cpa@firm.com
+"The dark theme has a contrast issue in the sidebar — some labels are unreadable.",email,accessibility@user.io
+"Reliable, fast, and the API is well designed. Our integration shipped in 2 days.",email,integrations@partner.io
+"Lost my entire workspace due to a sync conflict. This is critical, please investigate.",support,data-loss@user.io
+"Marketing copy is misleading — feature X is not actually available in the pro plan.",email,disappointed@user.io
+"Help center articles are clear and searchable. Rare these days.",email,reader@user.io
+"App is fast and lightweight. Doesn't drain my laptop battery like competitors.",email,traveler@nomad.io
+"The audit log is missing entries for actions taken by API tokens. Important for compliance.",email,compliance@bank.com
+"Onboarding emails are friendly and helpful. Made me feel welcome.",email,newbie2@user.io
+"Confusing pricing — I don't know which plan I need. A comparison table would help.",email,confused@pricing.io
+"Crash report when uploading files larger than 50MB. Please increase the limit or fix the bug.",support,uploader@user.io
+"The new AI features are surprisingly useful. Saves me time on writing product descriptions.",email,founder2@store.io
+"Two-factor codes sometimes take 30 seconds to arrive. Frustrating when logging in quickly.",email,2fa@user.io
+"Stable, predictable, no surprises. The kind of tool you stop thinking about and just use.",email,fan2@user.io

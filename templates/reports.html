@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reports — InsightLoop{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Reports</h1>
+<p class="text-slate-600 text-sm mb-6">Download your feedback and analyses in your preferred format.</p>
+
+<div class="grid md:grid-cols-3 gap-4">
+    <a href="/api/reports/csv"
+       class="block bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-500 hover:shadow-sm transition">
+        <div class="text-2xl">📄</div>
+        <h3 class="mt-2 font-semibold">CSV</h3>
+        <p class="text-sm text-slate-600 mt-1">All feedback rows with their analyses. Opens in Excel, Google Sheets, Numbers.</p>
+        <div class="mt-3 text-xs text-brand-600 font-medium">Download →</div>
+    </a>
+    <a href="/api/reports/json"
+       class="block bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-500 hover:shadow-sm transition">
+        <div class="text-2xl">🧩</div>
+        <h3 class="mt-2 font-semibold">JSON</h3>
+        <p class="text-sm text-slate-600 mt-1">Machine-readable dump. Use it to feed downstream tools or build your own dashboards.</p>
+        <div class="mt-3 text-xs text-brand-600 font-medium">Download →</div>
+    </a>
+    <a href="/api/reports/pdf"
+       class="block bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-500 hover:shadow-sm transition">
+        <div class="text-2xl">📑</div>
+        <h3 class="mt-2 font-semibold">PDF</h3>
+        <p class="text-sm text-slate-600 mt-1">A one-page summary with KPIs, top topics, and the most urgent items. Great for stakeholders.</p>
+        <div class="mt-3 text-xs text-brand-600 font-medium">Download →</div>
+    </a>
+</div>
+
+<div class="mt-10 bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
+    <h2 class="font-semibold text-slate-800 mb-2">REST API</h2>
+    <p>You can also fetch these reports programmatically:</p>
+    <pre class="bg-slate-900 text-slate-100 rounded-lg p-3 mt-2 overflow-x-auto text-xs"><code>curl http://localhost:8000/api/reports/csv  &gt; feedback.csv
+curl http://localhost:8000/api/reports/json &gt; feedback.json
+curl http://localhost:8000/api/reports/pdf  &gt; feedback.pdf</code></pre>
+    <p class="mt-2">Full API reference: <a class="text-brand-600 underline" href="/docs">/docs</a> (Swagger UI).</p>
+</div>
+{% endblock %}

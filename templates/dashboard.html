@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — InsightLoop{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Dashboard</h1>
+<p class="text-slate-600 text-sm mb-6">A live snapshot of all stored feedback.</p>
+
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="text-xs uppercase text-slate-500">Total feedback</div>
+        <div class="text-2xl font-semibold mt-1">{{ summary.total }}</div>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="text-xs uppercase text-slate-500">Average score</div>
+        <div class="text-2xl font-semibold mt-1">{{ '%.1f' % summary.average_score }}<span class="text-base text-slate-400">/100</span></div>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="text-xs uppercase text-slate-500">Urgent items</div>
+        <div class="text-2xl font-semibold mt-1">{{ summary.urgent_count }}</div>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="text-xs uppercase text-slate-500">Positive share</div>
+        <div class="text-2xl font-semibold mt-1">
+            {% if summary.total %}{% set ps = (summary.positive * 100.0 / summary.total) | round(1) %}{{ ps }}%{% else %}—{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h3 class="text-sm font-medium mb-2">Sentiment distribution</h3>
+        <canvas id="chartSentiment" height="180"></canvas>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h3 class="text-sm font-medium mb-2">Top topics</h3>
+        <canvas id="chartTopics" height="180"></canvas>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h3 class="text-sm font-medium mb-2">14-day trend</h3>
+        <canvas id="chartTrend" height="180"></canvas>
+    </div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-xl p-4">
+    <h3 class="text-sm font-medium mb-3">Most urgent items</h3>
+    <div id="urgent-list" class="text-sm text-slate-600">Loading…</div>
+</div>
+
+<script>
+(async function () {
+    const sentiment = {{ { 'positive': summary.positive, 'neutral': summary.neutral, 'negative': summary.negative } | tojson }};
+    const topics = {{ summary.top_topics | tojson }};
+    const colors = { positive: '#10b981', neutral: '#94a3b8', negative: '#ef4444' };
+
+    new Chart(document.getElementById('chartSentiment'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Neutral', 'Negative'],
+            datasets: [{ data: [sentiment.positive, sentiment.neutral, sentiment.negative],
+                         backgroundColor: [colors.positive, colors.neutral, colors.negative] }],
+        },
+        options: { plugins: { legend: { position: 'bottom' } } },
+    });
+
+    new Chart(document.getElementById('chartTopics'), {
+        type: 'bar',
+        data: {
+            labels: topics.map(t => t.topic),
+            datasets: [{ data: topics.map(t => t.count), backgroundColor: '#6366f1' }],
+        },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } },
+    });
+
+    const trend = await fetch('/api/insights/trends').then(r => r.json());
+    new Chart(document.getElementById('chartTrend'), {
+        type: 'line',
+        data: {
+            labels: trend.map(t => t.date),
+            datasets: [
+                { label: 'Positive', data: trend.map(t => t.positive), borderColor: colors.positive, tension: 0.3 },
+                { label: 'Neutral',  data: trend.map(t => t.neutral),  borderColor: colors.neutral,  tension: 0.3 },
+                { label: 'Negative', data: trend.map(t => t.negative), borderColor: colors.negative, tension: 0.3 },
+            ],
+        },
+        options: { plugins: { legend: { position: 'bottom' } } },
+    });
+
+    const urgent = await fetch('/api/insights/urgent').then(r => r.json());
+    const target = document.getElementById('urgent-list');
+    if (!urgent.length) { target.textContent = 'No urgent items 🎉'; return; }
+    target.innerHTML = urgent.map(u => `
+        <div class="border-b border-slate-100 last:border-0 py-2">
+            <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-700 font-semibold">U${u.analysis.urgency}</span>
+                <span class="text-slate-500 text-xs">${u.source}</span>
+                <span class="text-slate-400 text-xs">${new Date(u.created_at).toLocaleString()}</span>
+            </div>
+            <div class="mt-1 text-slate-800">${u.text.length > 220 ? u.text.slice(0, 220) + '…' : u.text}</div>
+        </div>
+    `).join('');
+})();
+</script>
+{% endblock %}

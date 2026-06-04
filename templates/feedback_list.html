@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Feedback — InsightLoop{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">All feedback</h1>
+<p class="text-slate-600 text-sm mb-6">Latest {{ rows|length }} items (newest first).</p>
+
+{% if not rows %}
+    <div class="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+        No feedback yet. <a href="/analyze" class="text-brand-600 underline">Analyze something</a> to get started.
+    </div>
+{% else %}
+<div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+            <tr>
+                <th class="text-left px-4 py-2">#</th>
+                <th class="text-left px-4 py-2">Text</th>
+                <th class="text-left px-4 py-2">Sentiment</th>
+                <th class="text-left px-4 py-2">Urgency</th>
+                <th class="text-left px-4 py-2">Topics</th>
+                <th class="text-left px-4 py-2">Source</th>
+                <th class="text-left px-4 py-2">When</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for fb in rows %}
+            {% set a = fb.analysis %}
+            <tr class="border-t border-slate-100 align-top">
+                <td class="px-4 py-2 text-slate-400">{{ fb.id }}</td>
+                <td class="px-4 py-2 max-w-md">
+                    <div class="text-slate-800">{{ fb.text[:160] }}{% if fb.text|length > 160 %}…{% endif %}</div>
+                    {% if a and a.summary %}<div class="text-xs text-slate-500 mt-1">{{ a.summary }}</div>{% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if a %}
+                        <span class="px-2 py-0.5 rounded text-xs font-semibold
+                            {% if a.sentiment == 'positive' %}bg-emerald-100 text-emerald-700
+                            {% elif a.sentiment == 'negative' %}bg-rose-100 text-rose-700
+                            {% else %}bg-slate-100 text-slate-700{% endif %}">
+                            {{ a.sentiment }} · {{ '%.0f' % a.score }}
+                        </span>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="px-4 py-2">
+                    {% if a %}
+                        <span class="px-2 py-0.5 rounded text-xs
+                            {% if a.urgency >= 4 %}bg-rose-100 text-rose-700
+                            {% elif a.urgency == 3 %}bg-amber-100 text-amber-700
+                            {% else %}bg-slate-100 text-slate-700{% endif %}">
+                            {{ a.urgency }}/5
+                        </span>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="px-4 py-2 text-xs text-slate-600">
+                    {% if a and a.topics %}{{ a.topics | join(', ') }}{% else %}-{% endif %}
+                </td>
+                <td class="px-4 py-2 text-xs text-slate-500">{{ fb.source }}</td>
+                <td class="px-4 py-2 text-xs text-slate-500">{{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

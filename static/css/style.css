@@ -1,0 +1,15 @@
+/* InsightLoop — custom styles on top of Tailwind */
+
+[x-cloak] { display: none !important; }
+
+/* Smoother font rendering */
+html { -webkit-font-smoothing: antialiased; }
+
+/* Custom scrollbar for code blocks */
+pre::-webkit-scrollbar { height: 8px; }
+pre::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, .4); border-radius: 4px; }
+
+/* Subtle gradient for the hero */
+.hero-gradient {
+    background: radial-gradient(ellipse at top, rgba(99, 102, 241, .12), transparent 60%);
+}

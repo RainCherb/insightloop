@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Analyze — InsightLoop{% endblock %}
+{% block content %}
+<div x-data="analyzeApp()" x-init="init()">
+    <h1 class="text-2xl font-semibold mb-1">Analyze feedback</h1>
+    <p class="text-slate-600 text-sm mb-6">Paste a single review, click <b>Analyze</b>, then optionally <b>Save</b> it to the dashboard.</p>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+                <label class="text-sm font-medium">Input</label>
+                <div class="flex items-center gap-2">
+                    <button @click="loadDemo()" type="button"
+                            class="text-xs px-2.5 py-1 rounded border border-slate-300 hover:bg-slate-50">
+                        Load demo text
+                    </button>
+                </div>
+            </div>
+            <textarea x-model="text" rows="10" placeholder="Type or paste customer feedback here…"
+                      class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <input x-model="source" type="text" placeholder="source (e.g. email, twitter)"
+                       class="border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                <input x-model="customer_email" type="email" placeholder="customer email (optional)"
+                       class="border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <button @click="analyze()" :disabled="loading || !text.trim()"
+                        class="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <span x-show="!loading">Analyze</span>
+                    <span x-show="loading">Analyzing…</span>
+                </button>
+                <button @click="save()" :disabled="!result || saving"
+                        class="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <span x-show="!saving">Save to dashboard</span>
+                    <span x-show="saving">Saving…</span>
+                </button>
+                <span x-show="message" x-text="message" class="text-sm text-slate-600"></span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-5 min-h-[300px]">
+            <h2 class="text-sm font-medium mb-3">Result</h2>
+            <template x-if="!result">
+                <p class="text-slate-400 text-sm">No analysis yet. Click <b>Analyze</b> to run the LLM.</p>
+            </template>
+            <template x-if="result">
+                <div class="space-y-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs uppercase tracking-wide text-slate-500">Sentiment</span>
+                        <span :class="sentimentClass(result.sentiment)"
+                              class="px-2 py-0.5 rounded text-xs font-semibold"
+                              x-text="result.sentiment"></span>
+                        <span class="text-slate-500">score <b x-text="result.score.toFixed(1)"></b>/100</span>
+                        <span class="text-slate-500">· urgency <b x-text="result.urgency"></b>/5</span>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Summary</div>
+                        <p class="text-slate-800" x-text="result.summary"></p>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Topics</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <template x-for="t in result.topics" :key="t">
+                                <span class="px-2 py-0.5 text-xs bg-slate-100 text-slate-700 rounded" x-text="t"></span>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Suggested actions</div>
+                        <ul class="list-disc pl-5 text-slate-800 space-y-1">
+                            <template x-for="a in result.suggested_actions" :key="a">
+                                <li x-text="a"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <div class="mt-8 bg-white border border-slate-200 rounded-xl p-5">
+        <h2 class="text-sm font-medium mb-2">Bulk upload</h2>
+        <p class="text-slate-500 text-sm mb-3">Upload a CSV with a <code>text</code> column (optional: <code>source</code>, <code>customer_email</code>) and analyze every row at once.</p>
+        <form @submit.prevent="uploadBulk($event)" class="flex items-center gap-3">
+            <input type="file" name="file" accept=".csv,text/csv"
+                   class="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
+            <button type="submit" :disabled="bulkLoading"
+                    class="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <span x-show="!bulkLoading">Upload CSV</span>
+                <span x-show="bulkLoading">Uploading…</span>
+            </button>
+            <span x-show="bulkMessage" x-text="bulkMessage" class="text-sm text-slate-600"></span>
+        </form>
+    </div>
+</div>
+
+<script>
+function analyzeApp() {
+    return {
+        text: '',
+        source: 'manual',
+        customer_email: '',
+        result: null,
+        loading: false,
+        saving: false,
+        message: '',
+        bulkLoading: false,
+        bulkMessage: '',
+        async init() {},
+        sentimentClass(s) {
+            return s === 'positive' ? 'bg-emerald-100 text-emerald-700'
+                 : s === 'negative' ? 'bg-rose-100 text-rose-700'
+                 : 'bg-slate-100 text-slate-700';
+        },
+        loadDemo() {
+            this.text = "The new dashboard is great — fast and intuitive — but the export-to-PDF feature crashed twice on a 200-row report. Please fix the stability before our quarterly review.";
+            this.source = 'email';
+            this.customer_email = 'alex@example.com';
+        },
+        async analyze() {
+            this.loading = true; this.message = ''; this.result = null;
+            try {
+                const resp = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: this.text }),
+                });
+                if (!resp.ok) throw new Error('Analysis failed');
+                this.result = await resp.json();
+            } catch (e) {
+                this.message = 'Error: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+        async save() {
+            if (!this.result) return;
+            this.saving = true; this.message = '';
+            try {
+                const resp = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: this.text,
+                        source: this.source || 'manual',
+                        customer_email: this.customer_email || null,
+                    }),
+                });
+                if (!resp.ok) throw new Error('Save failed');
+                this.message = 'Saved ✓';
+            } catch (e) {
+                this.message = 'Error: ' + e.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+        async uploadBulk(ev) {
+            const file = ev.target.querySelector('input[type=file]').files[0];
+            if (!file) { this.bulkMessage = 'Pick a CSV first.'; return; }
+            this.bulkLoading = true; this.bulkMessage = '';
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const resp = await fetch('/api/feedback/bulk', { method: 'POST', body: fd });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.detail || 'Upload failed');
+                this.bulkMessage = `Processed ${data.total} rows (${data.succeeded} ok, ${data.failed} failed).`;
+            } catch (e) {
+                this.bulkMessage = 'Error: ' + e.message;
+            } finally {
+                this.bulkLoading = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+[project]
+name = "insightloop"
+version = "0.1.0"
+description = "AI-powered customer feedback analyzer for small businesses"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "RainCherb" }]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["data", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "PL"]
+ignore = [
+    "PLR0913",  # too-many-args
+    "PLR0912",  # too-many-branches
+    "PLR0915",  # too-many-statements
+    "PLR2004",  # magic value
+    "E501",     # line length
+    "B008",     # FastAPI's Depends()/File() in defaults is idiomatic
+    "PLC0415",  # non-top-level import (used intentionally in init_db)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra -q"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "main.py"]
