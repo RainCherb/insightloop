@@ -15,6 +15,7 @@ class OllamaClient(LLMClient):
     def __init__(self, base_url: str, model: str, timeout: float = 60.0) -> None:
         self._base_url = base_url.rstrip("/")
         self._model = model
+        self.model_name = model
         self._timeout = timeout
 
     def analyze_feedback(self, text: str) -> LLMResponse:

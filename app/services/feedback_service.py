@@ -29,29 +29,46 @@ class FeedbackFilter:
 
 
 def list_feedback(db: Session, flt: FeedbackFilter) -> list[Feedback]:
-    stmt = (
-        select(Feedback)
-        .options(selectinload(Feedback.analysis))
-        .order_by(Feedback.created_at.desc())
-    )
+    """Return feedback matching the filter, paginated correctly.
+
+    All filters except `topic` are pushed into SQL (so pagination is correct).
+    `topic` is applied in Python because SQLite has no clean way to query inside
+    a JSON array; we therefore over-fetch for that one filter and slice in
+    Python. The number of topic tags per feedback is small (max 5), so the
+    in-memory cost is bounded.
+    """
+    has_analysis_filter = bool(flt.sentiment) or flt.min_urgency is not None
+    stmt = select(Feedback).options(selectinload(Feedback.analysis))
+
+    if has_analysis_filter:
+        # Inner join drops feedback that has no analysis row.
+        stmt = stmt.join(Analysis, Analysis.feedback_id == Feedback.id)
+        if flt.sentiment:
+            stmt = stmt.where(Analysis.sentiment == flt.sentiment)
+        if flt.min_urgency is not None:
+            stmt = stmt.where(Analysis.urgency >= flt.min_urgency)
+
+    if flt.source:
+        stmt = stmt.where(Feedback.source == flt.source)
+
+    stmt = stmt.order_by(Feedback.created_at.desc())
+
+    if flt.topic:
+        # Fetch the full matching window, then filter by topic in Python and
+        # slice for pagination. Documented limitation.
+        all_rows = list(db.scalars(stmt).all())
+        filtered = [
+            fb
+            for fb in all_rows
+            if fb.analysis is not None and flt.topic in (fb.analysis.topics or [])
+        ]
+        if flt.limit <= 0:
+            return filtered[flt.offset :]
+        return filtered[flt.offset : flt.offset + flt.limit]
+
     if flt.limit > 0:
         stmt = stmt.limit(flt.limit).offset(flt.offset)
-    rows = list(db.scalars(stmt).all())
-    if flt.sentiment or flt.topic or flt.min_urgency:
-        out: list[Feedback] = []
-        for fb in rows:
-            a = fb.analysis
-            if a is None:
-                continue
-            if flt.sentiment and a.sentiment != flt.sentiment:
-                continue
-            if flt.topic and flt.topic not in (a.topics or []):
-                continue
-            if flt.min_urgency is not None and a.urgency < flt.min_urgency:
-                continue
-            out.append(fb)
-        return out
-    return rows
+    return list(db.scalars(stmt).unique().all())
 
 
 def get_feedback(db: Session, feedback_id: int) -> Feedback | None:
@@ -73,15 +90,22 @@ def iter_csv_rows(csv_text: str) -> Iterable[FeedbackCreate]:
     reader = csv.DictReader(io.StringIO(csv_text))
     if reader.fieldnames is None or "text" not in reader.fieldnames:
         raise ValueError("CSV must contain a `text` column")
-    for raw in reader:
+    for line_no, raw in enumerate(reader, start=2):  # header is line 1
         text = (raw.get("text") or "").strip()
         if not text:
             continue
-        yield FeedbackCreate(
-            text=text,
-            source=(raw.get("source") or "csv").strip() or "csv",
-            customer_email=(raw.get("customer_email") or None),
-        )
+        email = (raw.get("customer_email") or "").strip() or None
+        try:
+            yield FeedbackCreate(
+                text=text,
+                source=(raw.get("source") or "csv").strip() or "csv",
+                customer_email=email,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Re-raise with the offending row number so the user can find it.
+            raise ValueError(
+                f"row {line_no}: invalid value for column `customer_email={email!r}` — {exc}"
+            ) from exc
 
 
 def bulk_ingest(rows: Iterable[FeedbackCreate], db: Session) -> BulkUploadResult:

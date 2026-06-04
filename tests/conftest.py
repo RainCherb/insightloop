@@ -12,12 +12,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Make sure tests are deterministic and offline.
-os.environ.setdefault("LLM_PROVIDER", "mock")
-os.environ.setdefault("OPENAI_API_KEY", "")
-os.environ.setdefault("ANTHROPIC_API_KEY", "")
-os.environ.setdefault("APP_DEBUG", "false")
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+# Make sure tests are deterministic and offline. We use direct assignment
+# (not setdefault) so that a stray LLM_PROVIDER in the developer's shell
+# cannot accidentally send real requests (and real money) from CI or local
+# runs. The autouse fixture below clears the lru_cache so the new values
+# are picked up.
+os.environ["LLM_PROVIDER"] = "mock"
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["APP_DEBUG"] = "false"
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app.ai import factory as llm_factory  # noqa: E402
 from app.ai.mock_client import MockClient  # noqa: E402
@@ -57,9 +61,9 @@ def client(test_db: Session) -> Generator[TestClient, None, None]:
             pass
 
     app.dependency_overrides[get_db] = _override_db
+    # The `with TestClient(app) as c:` context manager already drives the
+    # FastAPI lifespan startup, so we don't need a manual `c.get("/")` here.
     with TestClient(app) as c:
-        # Touch a route to trigger lifespan startup (init_db).
-        c.get("/")
         yield c
     app.dependency_overrides.clear()
 

@@ -13,8 +13,11 @@ from app.models import Analysis, Feedback
 
 
 def _iter_analyses(db: Session) -> Iterable[Analysis]:
+    """Stream analyses row-by-row. Callers that need a list should wrap
+    the result in `list(...)` themselves.
+    """
     stmt = select(Analysis)
-    yield from db.scalars(stmt).all()
+    yield from db.scalars(stmt)
 
 
 def summary(db: Session) -> dict:

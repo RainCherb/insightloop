@@ -71,8 +71,13 @@ def reports_page(request: Request) -> HTMLResponse:
 
 @router.get("/health", include_in_schema=False)
 def health() -> dict:
+    """Liveness probe: the process is up and the LLM client can be built.
+
+    NB: this does *not* make a real call to the provider. Use a separate
+    readiness probe if you need to verify the provider is reachable.
+    """
     try:
         client = get_llm_client()
-        return {"status": "ok", "provider": client.provider_name}
+        return {"status": "ok", "provider": client.provider_name, "model": client.model_name}
     except Exception as exc:  # noqa: BLE001
         return {"status": "degraded", "error": str(exc)}

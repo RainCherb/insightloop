@@ -17,6 +17,7 @@ class OpenAIClient(LLMClient):
             raise LLMError("OPENAI_API_KEY is not set")
         self._client = OpenAI(api_key=api_key)
         self._model = model
+        self.model_name = model
 
     def analyze_feedback(self, text: str) -> LLMResponse:
         try:

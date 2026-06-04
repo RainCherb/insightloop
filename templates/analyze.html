@@ -126,7 +126,11 @@ function analyzeApp() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: this.text }),
                 });
-                if (!resp.ok) throw new Error('Analysis failed');
+                if (!resp.ok) {
+                    const body = await resp.json().catch(() => ({}));
+                    const detail = body.detail || resp.statusText || 'Analysis failed';
+                    throw new Error(detail);
+                }
                 this.result = await resp.json();
             } catch (e) {
                 this.message = 'Error: ' + e.message;

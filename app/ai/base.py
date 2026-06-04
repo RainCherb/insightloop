@@ -53,6 +53,7 @@ class LLMClient(ABC):
     """Common interface for every supported LLM provider."""
 
     provider_name: str = "base"
+    model_name: str = ""
 
     @abstractmethod
     def analyze_feedback(self, text: str) -> LLMResponse: ...

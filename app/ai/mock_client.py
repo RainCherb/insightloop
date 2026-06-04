@@ -179,6 +179,7 @@ class MockClient(LLMClient):
 
     def __init__(self, model: str = "mock-deterministic-v1") -> None:
         self._model = model
+        self.model_name = model
 
     def analyze_feedback(self, text: str) -> LLMResponse:
         if not text or not text.strip():

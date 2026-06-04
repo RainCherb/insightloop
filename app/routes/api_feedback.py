@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["feedback"])
 
+# Reject oversize uploads to keep memory bounded. 10 MiB is plenty for a
+# 100k-row feedback CSV and small enough to keep the server responsive.
+MAX_BULK_UPLOAD_BYTES = 10 * 1024 * 1024
+_BULK_CHUNK_SIZE = 64 * 1024
+
 
 @router.post("/feedback", response_model=FeedbackOut, status_code=status.HTTP_201_CREATED)
 def create_feedback(payload: FeedbackCreate, db: Session = Depends(get_db)) -> FeedbackOut:
@@ -28,22 +33,45 @@ def create_feedback(payload: FeedbackCreate, db: Session = Depends(get_db)) -> F
 
 
 @router.post("/feedback/bulk")
-async def bulk_upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def bulk_upload(file: UploadFile = File(...), db: Session = Depends(get_db)) -> dict:
+    """Upload a CSV file and analyze every row. Synchronous on purpose so the
+    sync SQLAlchemy session behaves predictably.
+    """
     if file.content_type not in {"text/csv", "application/vnd.ms-excel", "text/plain"}:
         # Browsers often send `text/plain` or `application/octet-stream`; we still try.
         logger.info("bulk upload content_type=%s", file.content_type)
-    raw = await file.read()
+
+    # Stream the upload in chunks so a malicious or accidental huge file
+    # doesn't OOM the process.
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := file.file.read(_BULK_CHUNK_SIZE):
+        total += len(chunk)
+        if total > MAX_BULK_UPLOAD_BYTES:
+            raise HTTPException(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                f"CSV exceeds the {MAX_BULK_UPLOAD_BYTES // (1024 * 1024)} MB limit",
+            )
+        chunks.append(chunk)
+    raw = b"".join(chunks)
+
+    # Try UTF-8 first (with BOM stripped) and fall back to latin-1 so a
+    # spreadsheet exported on a Windows machine doesn't get rejected outright.
     try:
         text = raw.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise HTTPException(415, f"File is not UTF-8 text: {exc}") from exc
+    except UnicodeDecodeError:
+        try:
+            text = raw.decode("latin-1")
+        except UnicodeDecodeError as exc:
+            raise HTTPException(415, f"File is not decodable as text: {exc}") from exc
+
     try:
         rows = list(feedback_service.iter_csv_rows(text))
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if not rows:
         raise HTTPException(400, "CSV is empty or has no `text` rows")
-    return feedback_service.bulk_ingest(rows, db)
+    return feedback_service.bulk_ingest(rows, db).model_dump()
 
 
 @router.get("/feedback", response_model=list[FeedbackOut])
@@ -92,12 +120,12 @@ def provider_info() -> dict:
     return {
         "provider": client.provider_name,
         "configured_provider": settings.llm_provider,
-        "model": getattr(client, "_model", ""),
+        "model": client.model_name,
     }
 
 
 @router.post("/analyze", response_model=AnalysisOut)
-def analyze_only(payload: FeedbackCreate, db: Session = Depends(get_db)) -> AnalysisOut:
+def analyze_only(payload: FeedbackCreate) -> AnalysisOut:
     """Analyze text but do NOT persist. Useful for live previews."""
     from app.ai.factory import get_llm_client
 
