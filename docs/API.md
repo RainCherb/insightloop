@@ -62,6 +62,9 @@ Response (200):
 }
 ```
 
+If the configured LLM provider cannot be initialized, the endpoint returns
+`503`.
+
 ## Feedback (CRUD)
 
 ### `POST /api/feedback`
@@ -75,6 +78,8 @@ curl -X POST http://localhost:8000/api/feedback \
 ```
 
 Returns `201` and the full `FeedbackOut` (including the nested analysis).
+If the configured LLM provider cannot be initialized, the endpoint returns
+`503`.
 
 ### `POST /api/feedback/bulk`
 
@@ -96,6 +101,9 @@ Response (200):
   "errors": []
 }
 ```
+
+If the configured LLM provider cannot be initialized, the endpoint returns
+`503` before processing rows.
 
 ### `GET /api/feedback`
 
@@ -179,4 +187,5 @@ curl -OJ http://localhost:8000/api/reports/pdf
 | `404` | Feedback id not found |
 | `415` | Uploaded file is not UTF-8 text |
 | `422` | Validation error (Pydantic) |
-| `500` | Unexpected LLM failure (see logs) |
+| `503` | Configured LLM provider is unavailable or missing credentials |
+| `500` | Unexpected server failure (see logs) |

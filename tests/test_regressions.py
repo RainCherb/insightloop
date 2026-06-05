@@ -145,7 +145,7 @@ def test_analyze_endpoint_does_not_require_db(client):
 # ---------------------------------------------------------------------------
 
 
-def test_llm_clients_expose_model_name():
+def test_llm_clients_expose_model_name(monkeypatch):
     from app.ai.anthropic_client import AnthropicClient
     from app.ai.ollama_client import OllamaClient
     from app.ai.openai_client import OpenAIClient
@@ -153,13 +153,22 @@ def test_llm_clients_expose_model_name():
     # Each client must expose the model name via the public `model_name` attr
     # declared on the base class.
     assert MockClient().model_name == "mock-deterministic-v1"
-    # For the real clients we can't easily instantiate them without keys, but
-    # the class-level attribute is checked via a small instantiation that we
-    # immediately discard. We mock the constructors below.
-    OpenAIClient.__init__ = lambda self, api_key, model: setattr(self, "model_name", model)
-    AnthropicClient.__init__ = lambda self, api_key, model: setattr(self, "model_name", model)
-    OllamaClient.__init__ = lambda self, base_url, model, timeout=60.0: setattr(
-        self, "model_name", model
+    # For the real clients we can't instantiate without building provider SDK
+    # clients, so patch constructors for this narrow model_name contract check.
+    monkeypatch.setattr(
+        OpenAIClient,
+        "__init__",
+        lambda self, api_key, model: setattr(self, "model_name", model),
+    )
+    monkeypatch.setattr(
+        AnthropicClient,
+        "__init__",
+        lambda self, api_key, model: setattr(self, "model_name", model),
+    )
+    monkeypatch.setattr(
+        OllamaClient,
+        "__init__",
+        lambda self, base_url, model, timeout=60.0: setattr(self, "model_name", model),
     )
 
     assert OpenAIClient(api_key="x", model="gpt-4o").model_name == "gpt-4o"
@@ -249,6 +258,22 @@ def test_unconfigured_llm_provider_returns_503(monkeypatch):
     for response in (provider, analyze, feedback):
         assert response.status_code == 503
         assert "LLM provider is not available" in response.json()["detail"]
+
+
+def test_unconfigured_llm_provider_returns_503_for_bulk_upload(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    get_settings.cache_clear()
+    llm_factory.get_llm_client.cache_clear()
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        response = c.post(
+            "/api/feedback/bulk",
+            files={"file": ("feedback.csv", "text\nhello\n", "text/csv")},
+        )
+
+    assert response.status_code == 503
+    assert "LLM provider is not available" in response.json()["detail"]
 
 
 def test_sqlite_memory_url_works_without_dependency_override():

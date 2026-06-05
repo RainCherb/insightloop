@@ -78,6 +78,17 @@ def bulk_upload(file: UploadFile = File(...), db: Session = Depends(get_db)) -> 
         raise HTTPException(400, str(exc)) from exc
     if not rows:
         raise HTTPException(400, "CSV is empty or has no `text` rows")
+
+    try:
+        from app.ai.factory import get_llm_client
+
+        get_llm_client()
+    except LLMError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"LLM provider is not available: {exc}",
+        ) from exc
+
     return feedback_service.bulk_ingest(rows, db).model_dump()
 
 
