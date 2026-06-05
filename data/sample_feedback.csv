@@ -3,7 +3,7 @@ text,source,customer_email
 "Mobile app crashes every time I open the reports tab. Please fix this ASAP, it's blocking my work.",support,james@acme.io
 "Pricing is a bit high for small teams. Would love a startup tier around $19/mo.",email,founder@indie.dev
 "The onboarding is great but the documentation is missing webhook examples.",email,dev@startup.com
-"Honestly the best customer support I've ever had — response in 5 minutes, real solution, follow-up next day.",twitter,happy_user
+"Honestly the best customer support I've ever had — response in 5 minutes, real solution, follow-up next day.",twitter,happy_user@twitter.com
 "Dark mode would be a nice addition. Otherwise the app is perfect.",email,designer@studio.co
 "Got a chargeback email even though my payment was processed correctly. This is concerning and looks like fraud.",support,angry@customer.com
 "Performance has improved a lot since the last release. Kudos to the engineering team.",email,cto@acme.io
@@ -16,14 +16,14 @@ text,source,customer_email
 "Loading is slow when the dataset has more than 10k rows. Could you add pagination?",email,analyst@bigdata.io
 "Love the simplicity. No clutter, no upsells, just a tool that works.",email,minimalist@fan.io
 "The CSV export is missing the sentiment column. Please add it.",email,data@team.com
-"Spam — buy crypto now huge returns guaranteed",twitter,spam_bot
+"Spam — buy crypto now huge returns guaranteed",twitter,spam_bot@spam.io
 "Webhook stopped firing after the 1.4 release. Our integration has been silent for two days.",email,webhook@partner.io
 "Would be great to have a public API. Right now everything goes through the dashboard.",email,api@dev.io
 "Premium support has been very responsive and saved our launch last week. Worth every dollar.",email,vip@customer.com
 "Confusing navigation — I had to click 5 times to find the settings page.",email,confused@user.com
 "Push notifications on iOS are great. The Android version is missing.",email,mobile@user.io
 "Updated my billing info and got an error 500. Had to retry 3 times.",support,billing@user.io
-"The mobile app is a delight. Five stars from me.",appstore,reviewer1
+"The mobile app is a delight. Five stars from me.",appstore,reviewer1@apple.com
 "Constant bugs in the editor. Saving fails randomly, content gets duplicated, frustrating.",email,frustrated@writer.io
 "Great product overall, but the pricing for the enterprise tier is unclear and requires a sales call.",email,enterprise@biz.com
 "Auto-save is a lifesaver. Lost work used to be my #1 frustration.",email,writer@blogger.com
@@ -37,7 +37,7 @@ text,source,customer_email
 "Email notifications are too frequent. Let me choose what I want to hear about.",email,overwhelmed@user.io
 "API documentation is top-notch. The examples are real and copy-pasteable.",email,dev@partner.io
 "Need a way to export to PDF with custom branding for client reports.",email,consultant@firm.com
-"App froze three times today on my iPhone 15. Please fix the stability.",appstore,reviewer2
+"App froze three times today on my iPhone 15. Please fix the stability.",appstore,reviewer2@apple.com
 "Setup took me 5 minutes. Amazing.",email,newbie@user.io
 "The price increase is unfortunate. We were just getting started.",email,budget@startup.io
 "Security features are solid — SSO, audit logs, granular permissions. Exactly what we needed.",email,ciso@enterprise.com
