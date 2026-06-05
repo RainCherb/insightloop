@@ -93,16 +93,34 @@
     try {
         const urgent = await fetch('/api/insights/urgent').then(r => r.json());
         if (!urgent.length) { target.textContent = 'No urgent items 🎉'; return; }
-        target.innerHTML = urgent.map(u => `
-            <div class="border-b border-slate-100 last:border-0 py-2">
-                <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-700 font-semibold">U${u.analysis.urgency}</span>
-                    <span class="text-slate-500 text-xs">${u.source}</span>
-                    <span class="text-slate-400 text-xs">${new Date(u.created_at).toLocaleString()}</span>
-                </div>
-                <div class="mt-1 text-slate-800">${u.text.length > 220 ? u.text.slice(0, 220) + '…' : u.text}</div>
-            </div>
-        `).join('');
+        const nodes = urgent.map(u => {
+            const row = document.createElement('div');
+            row.className = 'border-b border-slate-100 last:border-0 py-2';
+
+            const meta = document.createElement('div');
+            meta.className = 'flex items-center gap-2';
+
+            const urgency = document.createElement('span');
+            urgency.className = 'px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-700 font-semibold';
+            urgency.textContent = `U${u.analysis.urgency}`;
+
+            const source = document.createElement('span');
+            source.className = 'text-slate-500 text-xs';
+            source.textContent = u.source;
+
+            const when = document.createElement('span');
+            when.className = 'text-slate-400 text-xs';
+            when.textContent = new Date(u.created_at).toLocaleString();
+
+            const text = document.createElement('div');
+            text.className = 'mt-1 text-slate-800';
+            text.textContent = u.text.length > 220 ? u.text.slice(0, 220) + '…' : u.text;
+
+            meta.append(urgency, source, when);
+            row.append(meta, text);
+            return row;
+        });
+        target.replaceChildren(...nodes);
     } catch (e) {
         target.textContent = 'Could not load urgent items.';
         console.error('Failed to load urgent items:', e);

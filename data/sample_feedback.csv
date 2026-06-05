@@ -58,3 +58,4 @@ text,source,customer_email
 "The new AI features are surprisingly useful. Saves me time on writing product descriptions.",email,founder2@store.io
 "Two-factor codes sometimes take 30 seconds to arrive. Frustrating when logging in quickly.",email,2fa@user.io
 "Stable, predictable, no surprises. The kind of tool you stop thinking about and just use.",email,fan2@user.io
+"Search filters are accurate, but saved views reset after refresh. Please make them persistent.",email,ops@workflow.io

@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.ai.base import LLMError
 from app.analyzer import analyze_and_persist
 from app.database import get_db
 from app.schemas import (
@@ -28,7 +29,13 @@ _BULK_CHUNK_SIZE = 64 * 1024
 
 @router.post("/feedback", response_model=FeedbackOut, status_code=status.HTTP_201_CREATED)
 def create_feedback(payload: FeedbackCreate, db: Session = Depends(get_db)) -> FeedbackOut:
-    result = analyze_and_persist(payload, db)
+    try:
+        result = analyze_and_persist(payload, db)
+    except LLMError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"LLM provider is not available: {exc}",
+        ) from exc
     return FeedbackOut.model_validate(result.feedback)
 
 
@@ -116,7 +123,13 @@ def provider_info() -> dict:
     from app.config import get_settings
 
     settings = get_settings()
-    client = get_llm_client()
+    try:
+        client = get_llm_client()
+    except LLMError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"LLM provider is not available: {exc}",
+        ) from exc
     return {
         "provider": client.provider_name,
         "configured_provider": settings.llm_provider,
@@ -129,8 +142,14 @@ def analyze_only(payload: FeedbackCreate) -> AnalysisOut:
     """Analyze text but do NOT persist. Useful for live previews."""
     from app.ai.factory import get_llm_client
 
-    llm = get_llm_client()
-    resp = llm.analyze_feedback(payload.text)
+    try:
+        llm = get_llm_client()
+        resp = llm.analyze_feedback(payload.text)
+    except LLMError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"LLM provider is not available: {exc}",
+        ) from exc
     return AnalysisOut(
         sentiment=resp.sentiment,
         score=resp.score,

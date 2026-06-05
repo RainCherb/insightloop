@@ -7,12 +7,19 @@ message of the fix for the full list).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
+from app.ai import factory as llm_factory
 from app.ai.mock_client import MockClient
+from app.config import get_settings
+from app.database import init_db
 from app.services import feedback_service
 from app.services.feedback_service import FeedbackFilter
+from main import create_app
 
 # ---------------------------------------------------------------------------
 # Bug #1: list_feedback pagination was applied BEFORE filtering, and the
@@ -218,3 +225,64 @@ def test_iter_csv_rows_reports_invalid_email_with_line_number():
     msg = str(excinfo.value)
     assert "row 3" in msg
     assert "not-an-email" in msg
+
+
+def test_dashboard_urgent_items_do_not_use_inner_html():
+    template = Path("templates/dashboard.html").read_text(encoding="utf-8")
+    assert "target.innerHTML" not in template
+    assert "replaceChildren" in template
+    assert "textContent = u.text" in template
+    assert "textContent = u.source" in template
+
+
+def test_unconfigured_llm_provider_returns_503(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    get_settings.cache_clear()
+    llm_factory.get_llm_client.cache_clear()
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        provider = c.get("/api/provider")
+        analyze = c.post("/api/analyze", json={"text": "Great product"})
+        feedback = c.post("/api/feedback", json={"text": "Great product"})
+
+    for response in (provider, analyze, feedback):
+        assert response.status_code == 503
+        assert "LLM provider is not available" in response.json()["detail"]
+
+
+def test_sqlite_memory_url_works_without_dependency_override():
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        created = c.post("/api/feedback", json={"text": "Great product, love it!"})
+        assert created.status_code == 201, created.text
+
+        fetched = c.get(f"/api/feedback/{created.json()['id']}")
+        assert fetched.status_code == 200
+        assert fetched.json()["analysis"] is not None
+
+
+def test_init_db_retries_sqlite_schema_race(monkeypatch):
+    calls = 0
+
+    def fake_create_all(*, bind):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OperationalError(
+                "CREATE TABLE feedback",
+                {},
+                Exception("table feedback already exists"),
+            )
+
+    monkeypatch.setattr("app.database.Base.metadata.create_all", fake_create_all)
+    init_db()
+    assert calls == 2
+
+
+def test_sample_feedback_contains_documented_60_rows():
+    rows = list(
+        feedback_service.iter_csv_rows(
+            Path("data/sample_feedback.csv").read_text(encoding="utf-8-sig")
+        )
+    )
+    assert len(rows) == 60
