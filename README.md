@@ -1,66 +1,51 @@
-# InsightLoop
+# InsightLoop — AI Feedback Analytics
 
-> **AI-powered customer feedback analyzer for small businesses.**
-> Drop in reviews. Get sentiment, topics, urgency, and a live dashboard.
+> **Self-hosted customer feedback analytics for SaaS, product, and support teams.**
+> Turn reviews, support tickets, surveys, and app feedback into sentiment, topics, urgency, reports, and a live dashboard.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org)
 [![CI](https://github.com/RainCherb/insightloop/actions/workflows/ci.yml/badge.svg)](https://github.com/RainCherb/insightloop/actions/workflows/ci.yml)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
 
-InsightLoop turns scattered customer feedback — review snippets, support tickets, survey comments, email replies — into structured intelligence you can act on. Paste a single review, upload a CSV, or hit the REST API; InsightLoop returns clean JSON *and* renders a dashboard with trends, top topics, and urgent items.
+InsightLoop turns messy customer feedback into an actionable product signal. Paste a single review, upload a CSV, or call the REST API; InsightLoop analyzes every item, stores the result, and shows the trends your team should act on next.
 
-It is **self-hosted**, **small**, and **provider-agnostic** — works with OpenAI, Anthropic, a local Ollama model, or a built-in mock that requires no provider API key.
-
----
-
-## ✨ Features
-
-- 🔍 **Per-feedback analysis** — sentiment (`positive` / `neutral` / `negative`), score `0–100`, topic tags, urgency `1–5`, a one-line summary, and concrete suggested actions.
-- 📊 **Live dashboard** — KPIs, sentiment distribution, top topics, daily trend line, urgent items feed.
-- 📥 **Bulk CSV upload** — process dozens or thousands of feedback rows in one shot, with per-row progress.
-- 🧠 **Provider-agnostic LLM** — swap between OpenAI, Anthropic, Ollama, or the offline **Mock** provider with a single env var.
-- 🧪 **Demo mode** — analyzes feedback without a provider API key via the deterministic mock client; write actions still require a local admin password or API key.
-- 📤 **Reports** — export results as CSV, JSON, or a polished PDF summary.
-- 🔌 **REST API** — `POST /api/feedback`, `POST /api/feedback/bulk`, `GET /api/insights/summary`, `GET /api/reports/...`.
-- 🎨 **Clean UI** — Tailwind + Alpine.js + Chart.js, no build step.
-- 🐳 **Docker-ready** — one-command deployable.
-- 🧰 **Typed & tested** — `pydantic` end-to-end, `pytest` suite, `ruff`-clean.
+Use it to triage customer support tickets, mine product reviews, summarize survey responses, watch churn risk, and build weekly voice-of-customer reports without sending your data to a hosted analytics platform. It is **self-hosted**, **small**, and **provider-agnostic** — bring OpenAI, Anthropic, local Ollama, or the built-in offline mock provider.
 
 ---
 
-## 🏗️ Architecture
+## Why InsightLoop?
 
-```
-                ┌────────────────┐
-                │  Browser (UI)  │   Tailwind + Alpine + Chart.js
-                └──────┬─────────┘
-                       │  HTTP / fetch
-                       ▼
-              ┌──────────────────┐
-              │  FastAPI app     │   Jinja2 templates + JSON API
-              │  (app/routes)    │
-              └──┬───────────────┘
-                 │
-   ┌─────────────┼─────────────┐
-   ▼             ▼             ▼
-┌────────┐  ┌──────────┐  ┌────────────┐
-│ Analyz │  │ Services │  │ Templates  │
-│  er    │  │ insights │  │  (Jinja2)  │
-│        │  │ reports  │  │            │
-└───┬────┘  └────┬─────┘  └────────────┘
-    │            │
-    ▼            ▼
-┌────────┐  ┌──────────┐
-│ AI CLI │  │ SQLAlch. │
-│  ents  │  │  SQLite  │
-└───┬────┘  └──────────┘
-    │
-    ▼
- OpenAI / Anthropic / Ollama / Mock
-```
+- **Find urgent issues faster** — detect negative sentiment, high-urgency feedback, and repeated complaints before they pile up.
+- **Make product decisions from real text** — extract topics, summaries, and suggested actions from reviews, NPS comments, emails, and helpdesk exports.
+- **Keep control of your data** — run it locally or on your own server with SQLite/Postgres-compatible storage.
+- **Avoid provider lock-in** — switch between OpenAI, Anthropic, Ollama, or deterministic mock mode with one environment variable.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
+---
+
+## Features
+
+- **AI sentiment analysis** — `positive`, `neutral`, or `negative`, plus a normalized `0–100` score.
+- **Topic extraction** — tag repeated product issues, support themes, feature requests, pricing complaints, UX friction, and more.
+- **Urgency scoring** — prioritize the feedback that needs a response first.
+- **Suggested actions** — get concrete next steps for support, product, and customer success teams.
+- **Live dashboard** — KPIs, sentiment distribution, top topics, daily trend line, and urgent item feed.
+- **Bulk CSV upload** — analyze review exports, survey dumps, and support-ticket batches.
+- **REST API** — integrate feedback ingestion into your product, CRM, helpdesk, or internal tools.
+- **Reports** — export analyzed feedback as CSV, JSON, or a PDF summary.
+- **Secure write access** — browser login + CSRF protection or API-key auth for mutating endpoints.
+- **Docker-ready** — run with plain Python, Docker, or `docker compose`.
+- **Typed and tested** — FastAPI, SQLAlchemy, Pydantic, pytest, ruff, and CI across Python 3.11–3.14.
+
+## Best for
+
+- SaaS customer feedback analysis
+- App-store and marketplace review mining
+- Support ticket triage
+- NPS, CSAT, and survey comment analysis
+- Product feedback dashboards
+- Voice-of-customer reporting
+- Self-hosted AI analytics prototypes
 
 ---
 
@@ -183,6 +168,12 @@ Full docs with examples: [`docs/API.md`](docs/API.md).
 
 ---
 
+## 🏗️ Architecture
+
+InsightLoop is a single FastAPI app with Jinja2 pages, JSON APIs, SQLAlchemy storage, and swappable LLM adapters. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full module map and data flow.
+
+---
+
 ## 🧪 Testing
 
 ```bash
@@ -215,7 +206,7 @@ Bug reports and feature requests: [open an issue](.github/ISSUE_TEMPLATE).
 - [ ] Topic clustering (embeddings + k-means)
 - [ ] Email digest of weekly insights
 - [ ] Embeddable widget for collecting feedback on a site
-- [ ] Auth & multi-tenant support
+- [ ] User accounts and multi-tenant workspaces
 
 ---
 
