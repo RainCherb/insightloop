@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, alias="APP_PORT")
     app_debug: bool = Field(default=False, alias="APP_DEBUG")
 
+    # ---- Write/API protection --------------------------------------------
+    insightloop_api_key: str = Field(default="", alias="INSIGHTLOOP_API_KEY")
+    admin_username: str = Field(default="admin", alias="ADMIN_USERNAME")
+    admin_password: str = Field(default="", alias="ADMIN_PASSWORD")
+    session_secret: str = Field(default="", alias="SESSION_SECRET")
+    secure_cookies: bool = Field(default=False, alias="SECURE_COOKIES")
+
     # ---- Persistence ------------------------------------------------------
     database_url: str = Field(default="sqlite:///./data/insightloop.db", alias="DATABASE_URL")
 

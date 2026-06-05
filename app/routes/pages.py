@@ -2,17 +2,36 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app.ai.factory import get_llm_client
 from app.config import get_settings
 from app.database import get_db
+from app.security import (
+    clear_login_cookies,
+    current_admin,
+    set_login_cookies,
+    verify_admin_credentials,
+    write_auth_configured,
+)
 from app.services import insights_service
 from app.templating import templates
 
 router = APIRouter(include_in_schema=False)
+
+
+def _template_context(request: Request, **extra) -> dict:
+    settings = get_settings()
+    return {
+        "settings": settings,
+        "auth": {
+            "configured": write_auth_configured(settings),
+            "user": current_admin(request, settings),
+        },
+        **extra,
+    }
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -20,7 +39,7 @@ def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"settings": get_settings()},
+        _template_context(request),
     )
 
 
@@ -29,7 +48,7 @@ def analyze_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "analyze.html",
-        {"settings": get_settings()},
+        _template_context(request),
     )
 
 
@@ -38,10 +57,7 @@ def dashboard_page(request: Request, db: Session = Depends(get_db)) -> HTMLRespo
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {
-            "settings": get_settings(),
-            "summary": insights_service.summary(db),
-        },
+        _template_context(request, summary=insights_service.summary(db)),
     )
 
 
@@ -53,10 +69,7 @@ def feedback_list_page(request: Request, db: Session = Depends(get_db)) -> HTMLR
     return templates.TemplateResponse(
         request,
         "feedback_list.html",
-        {
-            "settings": get_settings(),
-            "rows": rows,
-        },
+        _template_context(request, rows=rows),
     )
 
 
@@ -65,8 +78,54 @@ def reports_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "reports.html",
-        {"settings": get_settings()},
+        _template_context(request),
     )
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        _template_context(request, error=None),
+    )
+
+
+@router.post("/login", response_class=HTMLResponse)
+def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+) -> Response:
+    settings = get_settings()
+    if not settings.admin_password:
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            _template_context(
+                request,
+                error="Browser login is not configured. Set ADMIN_PASSWORD in .env.",
+            ),
+            status_code=503,
+        )
+    if not verify_admin_credentials(username, password, settings):
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            _template_context(request, error="Invalid username or password."),
+            status_code=401,
+        )
+
+    response = RedirectResponse("/analyze", status_code=303)
+    set_login_cookies(response, settings)
+    return response
+
+
+@router.post("/logout")
+def logout() -> Response:
+    response = RedirectResponse("/", status_code=303)
+    clear_login_cookies(response)
+    return response
 
 
 @router.get("/health", include_in_schema=False)

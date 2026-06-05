@@ -41,6 +41,13 @@
             <a href="/feedback"    class="px-3 py-2 rounded hover:bg-slate-100">Feedback</a>
             <a href="/reports"     class="px-3 py-2 rounded hover:bg-slate-100">Reports</a>
             <a href="/docs"        class="px-3 py-2 rounded hover:bg-slate-100 text-slate-500">API</a>
+            {% if auth.user %}
+                <form method="post" action="/logout">
+                    <button class="px-3 py-2 rounded hover:bg-slate-100 text-slate-500" type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="/login" class="px-3 py-2 rounded hover:bg-slate-100 text-slate-500">Login</a>
+            {% endif %}
         </nav>
     </div>
 </header>
@@ -52,7 +59,10 @@
 <footer class="border-t border-slate-200 mt-16">
     <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-slate-500 flex items-center justify-between">
         <span>© 2026 InsightLoop · MIT License</span>
-        <span>Provider: <code class="text-slate-700">{{ settings.llm_provider }}</code></span>
+        <span>
+            Provider: <code class="text-slate-700">{{ settings.llm_provider }}</code>
+            {% if auth.configured %}· Writes protected{% else %}· Writes disabled{% endif %}
+        </span>
     </div>
 </footer>
 </body>

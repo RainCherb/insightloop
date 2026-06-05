@@ -15,6 +15,7 @@ from app.schemas import (
     FeedbackCreate,
     FeedbackOut,
 )
+from app.security import require_write_auth
 from app.services import feedback_service
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,12 @@ MAX_BULK_UPLOAD_BYTES = 10 * 1024 * 1024
 _BULK_CHUNK_SIZE = 64 * 1024
 
 
-@router.post("/feedback", response_model=FeedbackOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/feedback",
+    response_model=FeedbackOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_write_auth)],
+)
 def create_feedback(payload: FeedbackCreate, db: Session = Depends(get_db)) -> FeedbackOut:
     try:
         result = analyze_and_persist(payload, db)
@@ -39,7 +45,7 @@ def create_feedback(payload: FeedbackCreate, db: Session = Depends(get_db)) -> F
     return FeedbackOut.model_validate(result.feedback)
 
 
-@router.post("/feedback/bulk")
+@router.post("/feedback/bulk", dependencies=[Depends(require_write_auth)])
 def bulk_upload(file: UploadFile = File(...), db: Session = Depends(get_db)) -> dict:
     """Upload a CSV file and analyze every row. Synchronous on purpose so the
     sync SQLAlchemy session behaves predictably.
@@ -122,7 +128,11 @@ def get_feedback(feedback_id: int, db: Session = Depends(get_db)) -> FeedbackOut
     return FeedbackOut.model_validate(fb)
 
 
-@router.delete("/feedback/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/feedback/{feedback_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_write_auth)],
+)
 def delete_feedback(feedback_id: int, db: Session = Depends(get_db)) -> None:
     if not feedback_service.delete_feedback(db, feedback_id):
         raise HTTPException(404, "Feedback not found")
@@ -148,7 +158,7 @@ def provider_info() -> dict:
     }
 
 
-@router.post("/analyze", response_model=AnalysisOut)
+@router.post("/analyze", response_model=AnalysisOut, dependencies=[Depends(require_write_auth)])
 def analyze_only(payload: FeedbackCreate) -> AnalysisOut:
     """Analyze text but do NOT persist. Useful for live previews."""
     from app.ai.factory import get_llm_client

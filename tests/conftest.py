@@ -22,6 +22,10 @@ os.environ["OPENAI_API_KEY"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["APP_DEBUG"] = "false"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["INSIGHTLOOP_API_KEY"] = "test-write-key"
+os.environ["ADMIN_USERNAME"] = "admin"
+os.environ["ADMIN_PASSWORD"] = "test-admin-password"
+os.environ["SESSION_SECRET"] = "test-session-secret"
 
 from app.ai import factory as llm_factory  # noqa: E402
 from app.ai.mock_client import MockClient  # noqa: E402
@@ -64,6 +68,7 @@ def client(test_db: Session) -> Generator[TestClient, None, None]:
     # The `with TestClient(app) as c:` context manager already drives the
     # FastAPI lifespan startup, so we don't need a manual `c.get("/")` here.
     with TestClient(app) as c:
+        c.headers.update({"Authorization": "Bearer test-write-key"})
         yield c
     app.dependency_overrides.clear()
 

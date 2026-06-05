@@ -6,6 +6,18 @@ Interactive docs: <http://localhost:8000/docs> (Swagger UI) and
 
 The OpenAPI schema is also served at `/openapi.json`.
 
+## Authentication
+
+Read-only endpoints are public. Mutating endpoints require authentication:
+
+- Browser UI: sign in at `/login`. Browser requests include a signed session
+  cookie and `X-CSRF-Token` header.
+- REST clients: set `INSIGHTLOOP_API_KEY` and send either
+  `Authorization: Bearer <key>` or `X-InsightLoop-API-Key: <key>`.
+
+If neither `INSIGHTLOOP_API_KEY` nor `ADMIN_PASSWORD` is configured, mutating
+endpoints fail closed with `503`.
+
 ## Health
 
 ### `GET /health`
@@ -73,6 +85,7 @@ Analyzes **and** persists a feedback item.
 
 ```bash
 curl -X POST http://localhost:8000/api/feedback \
+  -H "Authorization: Bearer $INSIGHTLOOP_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text":"The dashboard is amazing!","source":"email","customer_email":"a@x.com"}'
 ```
@@ -88,6 +101,7 @@ Upload a CSV file. The CSV **must** have a `text` column. Optional columns:
 
 ```bash
 curl -X POST http://localhost:8000/api/feedback/bulk \
+  -H "Authorization: Bearer $INSIGHTLOOP_API_KEY" \
   -F "file=@data/sample_feedback.csv"
 ```
 
@@ -184,6 +198,8 @@ curl -OJ http://localhost:8000/api/reports/pdf
 | Status | When |
 |---|---|
 | `400` | Bad request (e.g. CSV without `text` column, empty CSV) |
+| `401` | Authentication required for a mutating endpoint |
+| `403` | Browser session request is missing a valid CSRF token |
 | `404` | Feedback id not found |
 | `415` | Uploaded file is not UTF-8 text |
 | `422` | Validation error (Pydantic) |

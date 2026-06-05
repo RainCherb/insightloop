@@ -84,6 +84,7 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 # Open .env and (optionally) set OPENAI_API_KEY
 # To run WITHOUT an API key, set LLM_PROVIDER=mock
+# Set ADMIN_PASSWORD to use Analyze / Save / Upload in the browser UI
 ```
 
 ### 3. Run
@@ -98,6 +99,7 @@ Open **http://localhost:8000** and try the *Demo* button on the **Analyze** page
 
 ```bash
 curl -X POST http://localhost:8000/api/feedback ^
+  -H "Authorization: Bearer %INSIGHTLOOP_API_KEY%" ^
   -H "Content-Type: application/json" ^
   -d "{\"text\":\"The dashboard is great but export to PDF crashes on large reports.\",\"source\":\"email\",\"customer_email\":\"alex@example.com\"}"
 ```
@@ -122,6 +124,11 @@ All settings come from environment variables (or a `.env` file). See [`.env.exam
 | `APP_HOST` | `0.0.0.0` | Bind address |
 | `APP_PORT` | `8000` | Bind port |
 | `APP_DEBUG` | `false` | Enables FastAPI debug mode |
+| `INSIGHTLOOP_API_KEY` | _empty_ | Bearer/API key for mutating REST API calls |
+| `ADMIN_USERNAME` | `admin` | Browser login username for mutating UI actions |
+| `ADMIN_PASSWORD` | _empty_ | Browser login password; when empty, browser write actions are disabled |
+| `SESSION_SECRET` | _empty_ | Signing secret for browser sessions; falls back to the admin password/API key |
+| `SECURE_COOKIES` | `false` | Set `true` when serving only over HTTPS |
 | `DATABASE_URL` | `sqlite:///./data/insightloop.db` | SQLAlchemy URL |
 
 ---
@@ -133,6 +140,10 @@ Set `LLM_PROVIDER=mock` in `.env` and start the app. The mock client produces **
 - trying the app without signing up anywhere
 - CI / unit tests
 - offline development on a plane
+
+Mutating actions are protected even in demo mode. Set `ADMIN_PASSWORD` for the
+browser UI, or set `INSIGHTLOOP_API_KEY` and pass it as a Bearer token for REST
+API calls.
 
 A `data/sample_feedback.csv` with 60 realistic reviews is included — load it from the **Dashboard** page to populate the charts instantly.
 

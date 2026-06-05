@@ -35,6 +35,72 @@ def test_analyze_endpoint_returns_payload(client):
     assert isinstance(data["suggested_actions"], list)
 
 
+def test_write_routes_require_auth():
+    from fastapi.testclient import TestClient
+
+    from main import create_app
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        r = c.post("/api/analyze", json={"text": "Great product"})
+    assert r.status_code == 401
+
+
+def test_write_routes_fail_closed_when_auth_is_not_configured(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.config import get_settings
+    from main import create_app
+
+    monkeypatch.setenv("INSIGHTLOOP_API_KEY", "")
+    monkeypatch.setenv("ADMIN_PASSWORD", "")
+    get_settings.cache_clear()
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        r = c.post("/api/analyze", json={"text": "Great product"})
+    assert r.status_code == 503
+    assert "Write protection is not configured" in r.json()["detail"]
+
+
+def test_write_routes_allow_api_key_header():
+    from fastapi.testclient import TestClient
+
+    from main import create_app
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        r = c.post(
+            "/api/analyze",
+            headers={"X-InsightLoop-API-Key": "test-write-key"},
+            json={"text": "Great product"},
+        )
+    assert r.status_code == 200
+
+
+def test_browser_login_session_requires_csrf():
+    from fastapi.testclient import TestClient
+
+    from app.security import CSRF_COOKIE_NAME
+    from main import create_app
+
+    with TestClient(create_app(), raise_server_exceptions=False) as c:
+        login = c.post(
+            "/login",
+            data={"username": "admin", "password": "test-admin-password"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+
+        missing = c.post("/api/analyze", json={"text": "Great product"})
+        assert missing.status_code == 403
+
+        csrf = c.cookies.get(CSRF_COOKIE_NAME)
+        allowed = c.post(
+            "/api/analyze",
+            headers={"X-CSRF-Token": csrf},
+            json={"text": "Great product"},
+        )
+        assert allowed.status_code == 200
+
+
 def test_create_feedback_persists_and_returns(client):
     payload = {
         "text": "The export-to-PDF feature is amazing and saved us hours.",

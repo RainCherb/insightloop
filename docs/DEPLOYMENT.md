@@ -111,6 +111,9 @@ Add HTTPS with `certbot --nginx`.
 ## 7. Production checklist
 
 - [ ] Set a strong random `SECRET_KEY` if you add auth
+- [ ] Set `INSIGHTLOOP_API_KEY` for REST writes and/or `ADMIN_PASSWORD` for browser UI writes
+- [ ] Set `SESSION_SECRET` to a strong random value
+- [ ] Set `SECURE_COOKIES=true` when serving over HTTPS
 - [ ] Move SQLite to Postgres (`DATABASE_URL=postgresql+psycopg://…`)
 - [ ] Run behind nginx / Caddy / a load balancer
 - [ ] Mount a persistent volume for the `data/` directory

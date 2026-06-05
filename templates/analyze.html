@@ -108,6 +108,16 @@ function analyzeApp() {
         bulkLoading: false,
         bulkMessage: '',
         async init() {},
+        csrfToken() {
+            const row = document.cookie.split('; ').find(v => v.startsWith('insightloop_csrf='));
+            return row ? decodeURIComponent(row.split('=').slice(1).join('=')) : '';
+        },
+        jsonHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': this.csrfToken(),
+            };
+        },
         sentimentClass(s) {
             return s === 'positive' ? 'bg-emerald-100 text-emerald-700'
                  : s === 'negative' ? 'bg-rose-100 text-rose-700'
@@ -123,7 +133,7 @@ function analyzeApp() {
             try {
                 const resp = await fetch('/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: this.jsonHeaders(),
                     body: JSON.stringify({ text: this.text }),
                 });
                 if (!resp.ok) {
@@ -144,7 +154,7 @@ function analyzeApp() {
             try {
                 const resp = await fetch('/api/feedback', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: this.jsonHeaders(),
                     body: JSON.stringify({
                         text: this.text,
                         source: this.source || 'manual',
@@ -166,7 +176,11 @@ function analyzeApp() {
             try {
                 const fd = new FormData();
                 fd.append('file', file);
-                const resp = await fetch('/api/feedback/bulk', { method: 'POST', body: fd });
+                const resp = await fetch('/api/feedback/bulk', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': this.csrfToken() },
+                    body: fd,
+                });
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.detail || 'Upload failed');
                 this.bulkMessage = `Processed ${data.total} rows (${data.succeeded} ok, ${data.failed} failed).`;

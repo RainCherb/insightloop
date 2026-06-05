@@ -251,6 +251,7 @@ def test_unconfigured_llm_provider_returns_503(monkeypatch):
     llm_factory.get_llm_client.cache_clear()
 
     with TestClient(create_app(), raise_server_exceptions=False) as c:
+        c.headers.update({"Authorization": "Bearer test-write-key"})
         provider = c.get("/api/provider")
         analyze = c.post("/api/analyze", json={"text": "Great product"})
         feedback = c.post("/api/feedback", json={"text": "Great product"})
@@ -267,6 +268,7 @@ def test_unconfigured_llm_provider_returns_503_for_bulk_upload(monkeypatch):
     llm_factory.get_llm_client.cache_clear()
 
     with TestClient(create_app(), raise_server_exceptions=False) as c:
+        c.headers.update({"Authorization": "Bearer test-write-key"})
         response = c.post(
             "/api/feedback/bulk",
             files={"file": ("feedback.csv", "text\nhello\n", "text/csv")},
@@ -278,6 +280,7 @@ def test_unconfigured_llm_provider_returns_503_for_bulk_upload(monkeypatch):
 
 def test_sqlite_memory_url_works_without_dependency_override():
     with TestClient(create_app(), raise_server_exceptions=False) as c:
+        c.headers.update({"Authorization": "Bearer test-write-key"})
         created = c.post("/api/feedback", json={"text": "Great product, love it!"})
         assert created.status_code == 201, created.text
 
