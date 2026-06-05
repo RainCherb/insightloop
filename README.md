@@ -5,12 +5,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org)
-[![CI](https://img.shields.io/badge/CI-pending-lightgrey.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/RainCherb/insightloop/actions/workflows/ci.yml/badge.svg)](https://github.com/RainCherb/insightloop/actions/workflows/ci.yml)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
 
 InsightLoop turns scattered customer feedback — review snippets, support tickets, survey comments, email replies — into structured intelligence you can act on. Paste a single review, upload a CSV, or hit the REST API; InsightLoop returns clean JSON *and* renders a dashboard with trends, top topics, and urgent items.
 
-It is **self-hosted**, **small**, and **provider-agnostic** — works with OpenAI, Anthropic, a local Ollama model, or a built-in mock that requires no API key at all.
+It is **self-hosted**, **small**, and **provider-agnostic** — works with OpenAI, Anthropic, a local Ollama model, or a built-in mock that requires no provider API key.
 
 ---
 
@@ -20,7 +20,7 @@ It is **self-hosted**, **small**, and **provider-agnostic** — works with OpenA
 - 📊 **Live dashboard** — KPIs, sentiment distribution, top topics, daily trend line, urgent items feed.
 - 📥 **Bulk CSV upload** — process dozens or thousands of feedback rows in one shot, with per-row progress.
 - 🧠 **Provider-agnostic LLM** — swap between OpenAI, Anthropic, Ollama, or the offline **Mock** provider with a single env var.
-- 🧪 **Demo mode** — runs **without any API key** thanks to a deterministic mock client, perfect for trying the app or for CI.
+- 🧪 **Demo mode** — analyzes feedback without a provider API key via the deterministic mock client; write actions still require a local admin password or API key.
 - 📤 **Reports** — export results as CSV, JSON, or a polished PDF summary.
 - 🔌 **REST API** — `POST /api/feedback`, `POST /api/feedback/bulk`, `GET /api/insights/summary`, `GET /api/reports/...`.
 - 🎨 **Clean UI** — Tailwind + Alpine.js + Chart.js, no build step.
@@ -83,8 +83,10 @@ pip install -r requirements.txt
 ```powershell
 Copy-Item .env.example .env
 # Open .env and (optionally) set OPENAI_API_KEY
-# To run WITHOUT an API key, set LLM_PROVIDER=mock
-# Set ADMIN_PASSWORD to use Analyze / Save / Upload in the browser UI
+# Local demo without an LLM provider key:
+#   set LLM_PROVIDER=mock
+#   set ADMIN_PASSWORD to sign in at /login
+#   set SESSION_SECRET to a long random string
 ```
 
 ### 3. Run
@@ -93,14 +95,14 @@ Copy-Item .env.example .env
 python main.py
 ```
 
-Open **http://localhost:8000** and try the *Demo* button on the **Analyze** page — it loads pre-canned feedback into the **Mock** provider so you can see the full flow.
+Open **http://localhost:8000**, sign in at **/login**, then try the *Demo* button on the **Analyze** page. It loads pre-canned feedback into the **Mock** provider so you can see the full flow.
 
 ### 4. Try the API
 
-```bash
-curl -X POST http://localhost:8000/api/feedback ^
-  -H "Authorization: Bearer %INSIGHTLOOP_API_KEY%" ^
-  -H "Content-Type: application/json" ^
+```powershell
+curl.exe -X POST http://localhost:8000/api/feedback `
+  -H "Authorization: Bearer $env:INSIGHTLOOP_API_KEY" `
+  -H "Content-Type: application/json" `
   -d "{\"text\":\"The dashboard is great but export to PDF crashes on large reports.\",\"source\":\"email\",\"customer_email\":\"alex@example.com\"}"
 ```
 
@@ -133,9 +135,9 @@ All settings come from environment variables (or a `.env` file). See [`.env.exam
 
 ---
 
-## 🧪 Demo mode (no API key)
+## 🧪 Demo mode
 
-Set `LLM_PROVIDER=mock` in `.env` and start the app. The mock client produces **deterministic, plausible analyses** based on a hash of the input — the same text always returns the same result. It’s perfect for:
+Set `LLM_PROVIDER=mock` in `.env` and start the app. The mock client produces **deterministic, plausible analyses** without an OpenAI/Anthropic/Ollama key — the same text always returns the same result. It’s perfect for:
 
 - trying the app without signing up anywhere
 - CI / unit tests
@@ -156,6 +158,7 @@ docker build -t insightloop .
 docker run --rm -p 8000:8000 --env-file .env -v ${PWD}/data:/app/data insightloop
 ```
 
+Set `ADMIN_PASSWORD` and `SESSION_SECRET` in `.env` before using the browser UI.
 A `docker-compose.yml` is provided for one-line spin-up.
 
 ---

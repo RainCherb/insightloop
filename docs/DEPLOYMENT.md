@@ -9,7 +9,7 @@ process manager, inside Docker, or on a PaaS.
 python -m venv .venv
 source .venv/bin/activate          # or: .\.venv\Scripts\Activate.ps1 on Windows
 pip install -r requirements.txt
-cp .env.example .env               # then edit OPENAI_API_KEY
+cp .env.example .env               # then edit provider + auth settings
 python main.py
 ```
 
@@ -110,7 +110,6 @@ Add HTTPS with `certbot --nginx`.
 
 ## 7. Production checklist
 
-- [ ] Set a strong random `SECRET_KEY` if you add auth
 - [ ] Set `INSIGHTLOOP_API_KEY` for REST writes and/or `ADMIN_PASSWORD` for browser UI writes
 - [ ] Set `SESSION_SECRET` to a strong random value
 - [ ] Set `SECURE_COOKIES=true` when serving over HTTPS

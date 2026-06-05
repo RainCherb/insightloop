@@ -44,6 +44,7 @@ curl http://localhost:8000/api/provider
 ### `POST /api/analyze`
 
 Analyzes a piece of text **without persisting**. Useful for live UI previews.
+Requires browser login with CSRF or a REST API key.
 
 Request body:
 
@@ -139,6 +140,12 @@ Returns a single item or 404.
 ### `DELETE /api/feedback/{id}`
 
 Removes a single item. Returns `204` on success, `404` if not found.
+Requires browser login with CSRF or a REST API key.
+
+```bash
+curl -X DELETE http://localhost:8000/api/feedback/123 \
+  -H "Authorization: Bearer $INSIGHTLOOP_API_KEY"
+```
 
 ## Insights
 

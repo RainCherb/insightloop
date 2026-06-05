@@ -28,6 +28,7 @@ modules before it hits the database or the LLM.
 | `app/database.py` | SQLAlchemy engine, session factory, `init_db`, `get_db`. |
 | `app/models.py` | ORM: `Feedback` and `Analysis`. |
 | `app/schemas.py` | Pydantic DTOs for the HTTP layer. |
+| `app/security.py` | Bearer/API key auth, signed browser sessions, and CSRF checks for mutating routes. |
 | `app/templating.py` | Shared `Jinja2Templates` instance. |
 | `app/ai/base.py` | `LLMClient` ABC, `LLMResponse`, JSON parser. |
 | `app/ai/openai_client.py` | OpenAI Chat Completions adapter (JSON mode). |
@@ -48,6 +49,7 @@ modules before it hits the database or the LLM.
 
 ```
 POST /api/feedback
+  → require_write_auth (Bearer/API key or browser session + CSRF)
   → api_feedback.create_feedback
   → analyzer.analyze_and_persist
        ├─ INSERT feedback row
@@ -57,6 +59,12 @@ POST /api/feedback
        └─ INSERT analysis row
   → FeedbackOut JSON
 ```
+
+Read-only endpoints are public. Mutating endpoints (`POST /api/analyze`,
+`POST /api/feedback`, `POST /api/feedback/bulk`, `DELETE /api/feedback/{id}`)
+fail closed unless `INSIGHTLOOP_API_KEY` or `ADMIN_PASSWORD` is configured.
+REST clients authenticate with a Bearer token or `X-InsightLoop-API-Key`.
+Browser writes use a signed session cookie plus `X-CSRF-Token`.
 
 ## Data model
 
